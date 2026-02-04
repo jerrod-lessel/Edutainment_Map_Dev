@@ -184,7 +184,9 @@ fetch("data/knowledge_nodes.geojson")
         layer.on("popupopen", (e) => {
           const popup = e.popup;
           popup._pcFeature = feature; // stash for refresh
-      
+
+          map.panInside(e.popup.getLatLng(), { padding: [20, 20] });
+
           // defer one tick so the DOM exists
           setTimeout(() => wirePopupBehavior(popup), 0);
         });
