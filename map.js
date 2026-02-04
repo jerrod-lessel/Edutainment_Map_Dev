@@ -99,6 +99,9 @@ function wirePopupBehavior(popup) {
   const el = popup.getElement();
   if (!el) return;
 
+  L.DomEvent.disableClickPropagation(el);
+  L.DomEvent.disableScrollPropagation(el);
+
   el.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-action]");
     if (!btn) return;
