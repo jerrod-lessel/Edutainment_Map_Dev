@@ -143,18 +143,17 @@ fetch("data/knowledge_nodes.geojson")
         });
       },
       onEachFeature: (feature, layer) => {
-        layer.on("click", () => {
-          const popup = L.popup({ maxWidth: 320 })
-            .setLatLng(layer.getLatLng())
-            .setContent(renderNodeCard(feature));
-
-          // stash feature for refresh
-          popup._pcFeature = feature;
-
-          popup.openOn(map);
-          map.once("popupopen", (evt) => wirePopupBehavior(evt.popup));
+        layer.bindPopup(() => renderNodeCard(feature), { maxWidth: 320 });
+      
+        layer.on("popupopen", (e) => {
+          const popup = e.popup;
+          popup._pcFeature = feature; // stash for refresh
+      
+          // defer one tick so the DOM exists
+          setTimeout(() => wirePopupBehavior(popup), 0);
         });
       }
+
     }).addTo(map);
   })
   .catch((err) => {
