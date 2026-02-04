@@ -1,0 +1,21 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "news_escalante_meadows_2025",
+        "title": "New affordable housing community opens in Guadalupe",
+        "date": "2025-07-31",
+        "summary": "Escalante Meadows opened with 80 climate-friendly affordable homes plus a new community building and child-care center—replacing older, flood-prone units and adding transit/active-transport upgrades.",
+        "article_url": "https://sgc.ca.gov/newsroom/blog/2025/07-31/",
+        "wiki_url": "https://en.wikipedia.org/wiki/Affordable_housing",
+        "charity_url": "https://www.sbhabitat.org/donate/"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-120.5702, 34.9647]
+      }
+    }
+  ]
+}
