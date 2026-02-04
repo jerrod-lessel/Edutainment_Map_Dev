@@ -197,7 +197,14 @@ fetch(`data/knowledge_nodes.geojson?v=${Date.now()}`)
           fillOpacity: 0.9
         }),
       onEachFeature: (feature, layer) => {
-        layer.bindPopup(() => renderNodeCard(feature), { maxWidth: 340 });
+        layer.bindPopup(() => renderNodeCard(feature), {
+          maxWidth: 340,
+          autoPan: true,
+          keepInView: true,
+          autoPanPaddingTopLeft: [20, 80],   // extra top padding so it never clips
+          autoPanPaddingBottomRight: [20, 20],
+          offset: L.point(0, 12)             // nudges popup down a bit
+        });
 
         layer.on("popupopen", (e) => {
           const popup = e.popup;
