@@ -52,4 +52,44 @@
       }
     }
   ]
+},
+
+{
+  "type": "Feature",
+  "properties": {
+    "id": "guadalupe_dunes_01",
+    "title": "Guadalupe–Nipomo Dunes",
+    "subtitle": "Why moving sand matters",
+    "questions": [
+      {
+        "level": 1,
+        "question": "Why do sand dunes move over time?",
+        "choices": [
+          "They don’t — dunes are basically sandy mountains.",
+          "Wind pushes sand grains uphill and downhill in small hops.",
+          "Earth’s rotation slowly drags them across the coast.",
+          "Tourists accidentally kick them forward."
+        ],
+        "correct": 1,
+        "explain": "Wind moves sand grain by grain through a process called saltation, causing dunes to slowly migrate across the landscape."
+      },
+      {
+        "level": 2,
+        "question": "Why are coastal dunes important to nearby towns?",
+        "choices": [
+          "They block ocean views, which builds character.",
+          "They act as a natural buffer against storm surge and coastal flooding.",
+          "They only matter to movie directors and dune buggies.",
+          "They make GPS signals less accurate."
+        ],
+        "correct": 1,
+        "explain": "Dunes absorb wave energy and storm surge, helping protect inland areas from flooding and erosion during major coastal storms."
+      }
+    ]
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [-120.6435, 34.9665]
+  }
 }
+
