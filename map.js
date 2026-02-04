@@ -15,14 +15,22 @@ L.tileLayer(
   }
 ).addTo(map);
 
-// Guadalupe boundary (approximate box for now)
+// Guadalupe world bounds (approximate, we refine later)
 const guadalupeBounds = L.latLngBounds(
-  [34.920, -120.640], // southwest (ocean)
-  [35.010, -120.500]  // northeast (river/county line)
+  [34.920, -120.640], // Southwest (ocean)
+  [35.010, -120.500]  // Northeast (river / county line)
 );
 
-// Constrain map movement
+// Keep map inside Guadalupe
 map.setMaxBounds(guadalupeBounds);
-map.on('drag', () => {
+
+map.on('drag', function () {
   map.panInsideBounds(guadalupeBounds, { animate: false });
 });
+
+L.rectangle(guadalupeBounds, {
+  color: '#666',
+  weight: 1,
+  dashArray: '4,4',
+  fillOpacity: 0
+}).addTo(map);
