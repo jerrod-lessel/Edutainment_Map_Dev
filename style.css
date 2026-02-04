@@ -1,1 +1,11 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+#map {
+  height: 100%;
+  width: 100%;
+}
 
