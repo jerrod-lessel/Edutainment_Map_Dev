@@ -5,6 +5,7 @@
       "type": "Feature",
       "properties": {
         "id": "sm_river_bed_01",
+        "kind": "hydrology",
         "title": "Santa Maria River Bed",
         "subtitle": "Why a “dry” river still matters",
         "questions": [
@@ -55,6 +56,7 @@
       "type": "Feature",
       "properties": {
         "id": "guadalupe_dunes_01",
+        "kind": "geomorphology",
         "title": "Guadalupe–Nipomo Dunes",
         "subtitle": "Why moving sand matters",
         "questions": [
