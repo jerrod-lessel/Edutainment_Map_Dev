@@ -289,6 +289,10 @@ body {
   background: #b7791f;
 }
 
+.sim-dot.urban {
+  background: #7c3aed;
+}
+
 .sim-dot.news {
   background: #f0b429;
 }
