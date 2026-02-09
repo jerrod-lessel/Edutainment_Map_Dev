@@ -226,3 +226,66 @@ body {
   background-size: 100% 6px;
 }
 
+/* ===============================
+   SimCity-style Legend HUD
+   =============================== */
+
+.sim-legend {
+  background: var(--hud-bg);
+  border: 2px solid var(--hud-border-dark);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 4px 4px 0 var(--hud-border-dark), 0 8px 20px rgba(0,0,0,0.25);
+  font-family: "VT323", monospace;
+  min-width: 150px;
+  position: relative;
+}
+
+/* Beveled inner edge */
+.sim-legend::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 10px;
+  border-top: 2px solid var(--hud-highlight);
+  border-left: 2px solid var(--hud-highlight);
+  border-right: 2px solid var(--hud-border-mid);
+  border-bottom: 2px solid var(--hud-border-mid);
+  pointer-events: none;
+}
+
+.sim-legend-title {
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.7rem;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.sim-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  margin: 4px 0;
+}
+
+/* Colored dots */
+.sim-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--hud-border-dark);
+  box-shadow: 1px 1px 0 var(--hud-border-dark);
+}
+
+.sim-dot.hydrology {
+  background: #2c7be5;
+}
+
+.sim-dot.geomorphology {
+  background: #b7791f;
+}
+
+.sim-dot.news {
+  background: #f0b429;
+}
