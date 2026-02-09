@@ -381,7 +381,7 @@ legend.onAdd = function () {
 
     <div class="sim-legend-item">
       <span class="sim-dot infrastructure"></span>
-      Landforms
+      Development
     </div>
 
     <div class="sim-legend-item">
