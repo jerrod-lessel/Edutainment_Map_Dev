@@ -4,6 +4,58 @@
     {
       "type": "Feature",
       "properties": {
+        "id": "guadalupe_city_hall_01",
+        "kind": "urban",
+        "minLevel": 2,
+        "title": "Guadalupe City Hall",
+        "subtitle": "How a town actually makes decisions",
+        "questions": [
+          {
+            "level": 1,
+            "question": "What’s the most basic job of a City Hall?",
+            "choices": [
+              "Hand out free parking tickets (as a hobby).",
+              "Control the weather and schedule sunshine.",
+              "Decide what color every house must be.",
+              "Run local services and make local decisions through public meetings and staff."
+            ],
+            "correct": 3,
+            "explain": "City Hall is where local government operates: public meetings, staff work, budgets, permits, and services like roads, parks, and planning."
+          },
+          {
+            "level": 2,
+            "question": "Which of these is usually a city responsibility (not the state or federal government)?",
+            "choices": [
+              "Setting local zoning rules and issuing building permits.",
+              "Declaring war.",
+              "Printing money.",
+              "Running NASA mission control."
+            ],
+            "correct": 0,
+            "explain": "Cities commonly handle zoning and permits, local streets, parks, and many day-to-day services. Big-ticket items like war/printing money are not city powers."
+          },
+          {
+            "level": 3,
+            "question": "A city budget is MOST like…",
+            "choices": [
+              "A wish list of cool stuff with no numbers.",
+              "A secret document locked in a vault.",
+              "A plan that matches expected income (taxes/fees/grants) to expenses (services/projects).",
+              "A weather forecast but for money."
+            ],
+            "correct": 2,
+            "explain": "A budget is the city’s plan for where money comes from and where it goes: operations, maintenance, and long-term projects."
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-120.569255, 34.969584]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
         "id": "guadalupe_train_station_01",
         "kind": "infrastructure",
         "minLevel": 2,
