@@ -16,6 +16,12 @@ L.tileLayer(
 ).addTo(map);
 
 // ===============================
+// Layer Groups (SimCity toggles)
+// ===============================
+const learningLayer = L.layerGroup().addTo(map);
+const newsLayer = L.layerGroup().addTo(map);
+
+// ===============================
 // Guadalupe bounds
 // ===============================
 const guadalupeBounds = L.latLngBounds(
@@ -234,7 +240,7 @@ fetch(`data/knowledge_nodes.geojson?v=${Date.now()}`)
           setTimeout(() => wirePopupBehavior(popup), 0);
         });
       }
-    }).addTo(map);
+    }).addTo(learningLayer);
   })
   .catch(err => {
     console.error(err);
@@ -283,7 +289,7 @@ fetch(`data/positive_news.geojson?v=${Date.now()}`)
           offset: L.point(0, 12)
         });
       }
-    }).addTo(map);
+    }).addTo(newsLayer);
   })
   .catch(err => {
     console.error(err);
@@ -325,3 +331,48 @@ legend.onAdd = function () {
 
 legend.addTo(map);
 
+// ===============================
+// SimCity-style Layer Toggle Panel
+// ===============================
+const layersPanel = L.control({ position: "topleft" });
+
+layersPanel.onAdd = function () {
+  const div = L.DomUtil.create("div", "sim-layers");
+
+  div.innerHTML = `
+    <div class="sim-layers-title">LAYERS</div>
+
+    <label class="sim-layer-item">
+      <input type="checkbox" id="toggle-learning" checked />
+      <span>Learning Nodes</span>
+    </label>
+
+    <label class="sim-layer-item">
+      <input type="checkbox" id="toggle-news" checked />
+      <span>Positive News</span>
+    </label>
+  `;
+
+  L.DomEvent.disableClickPropagation(div);
+  L.DomEvent.disableScrollPropagation(div);
+
+  // Hook up toggles
+  setTimeout(() => {
+    const learnCb = div.querySelector("#toggle-learning");
+    const newsCb = div.querySelector("#toggle-news");
+
+    learnCb.addEventListener("change", () => {
+      if (learnCb.checked) map.addLayer(learningLayer);
+      else map.removeLayer(learningLayer);
+    });
+
+    newsCb.addEventListener("change", () => {
+      if (newsCb.checked) map.addLayer(newsLayer);
+      else map.removeLayer(newsLayer);
+    });
+  }, 0);
+
+  return div;
+};
+
+layersPanel.addTo(map);
