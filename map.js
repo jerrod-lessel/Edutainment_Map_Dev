@@ -83,6 +83,10 @@ function setProgress(nodeId, idx) {
   localStorage.setItem(progressKey(nodeId), String(idx));
 }
 
+function hasVisitedCityHall() {
+  return localStorage.getItem("pc_visited_city_hall") === "1";
+}
+
 // ===============================
 // STATUS HUD (Curiosity Level)
 // ===============================
@@ -127,10 +131,11 @@ function updateStatusHud() {
     map._popup.setContent(level >= need ? renderNodeCard(f) : renderLockedCard(f));
     setTimeout(() => wirePopupBehavior(map._popup), 0);
   }
-    // Show/hide POLICIES panel at Level 2+
+    // Show/hide POLICIES panel at Level 2+ and has visited city hall
     const pol = document.querySelector(".sim-policies");
     if (pol) {
-      pol.style.display = (getCurrentLevel() >= 2) ? "block" : "none";
+      const unlocked = getCurrentLevel() >= 2 && hasVisitedCityHall();
+      pol.style.display = unlocked ? "block" : "none";
     }
 }
 
@@ -392,10 +397,18 @@ fetch(`data/knowledge_nodes.geojson?v=${Date.now()}`)
         layer.on("popupopen", (e) => {
           const popup = e.popup;
           popup._pcFeature = feature;
-
+        
+          // Mark City Hall as visited
+          if (feature?.properties?.id === "guadalupe_city_hall_01") {
+            localStorage.setItem("pc_visited_city_hall", "1");
+          }
+        
           map.panInside(e.popup.getLatLng(), { padding: [20, 20] });
-
+        
           setTimeout(() => wirePopupBehavior(popup), 0);
+        
+          // Update HUD in case this unlocks policies
+          updateStatusHud();
         });
       }
     }).addTo(learningLayer);
