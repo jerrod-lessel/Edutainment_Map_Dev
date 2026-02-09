@@ -229,7 +229,6 @@ body {
 /* ===============================
    SimCity-style Legend HUD
    =============================== */
-
 .sim-legend {
   background: var(--hud-bg);
   border: 2px solid var(--hud-border-dark);
