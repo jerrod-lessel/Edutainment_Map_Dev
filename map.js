@@ -301,7 +301,7 @@ function wirePopupBehavior(popup) {
 // ===============================
 // SimCity-style Policies Panel (locked until Level 2)
 // ===============================
-const policiesPanel = L.control({ position: "topright" });
+const policiesPanel = L.control({ position: "bottomright" });
 
 policiesPanel.onAdd = function () {
   const div = L.DomUtil.create("div", "sim-policies");
