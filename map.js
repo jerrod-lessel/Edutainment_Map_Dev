@@ -72,6 +72,57 @@ function setProgress(nodeId, idx) {
 }
 
 // ===============================
+// STATUS HUD (Curiosity Level)
+// ===============================
+// Stores total questions once knowledge_nodes.geojson is loaded
+window._pcTotals = { totalQuestions: 0 };
+
+function computeOverallProgress() {
+  // Count answered questions by scanning localStorage keys
+  let answered = 0;
+
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith("pc_answered_") && localStorage.getItem(key) === "1") {
+      answered++;
+    }
+  }
+
+  return { answered, total: window._pcTotals.totalQuestions || 0 };
+}
+
+function updateStatusHud() {
+  const levelEl = document.getElementById("cur-level");
+  const scoreEl = document.getElementById("cur-score");
+  if (!levelEl || !scoreEl) return;
+
+  const { answered, total } = computeOverallProgress();
+
+  // Simple leveling: every 3 correct answers = +1 level
+  const level = 1 + Math.floor(answered / 3);
+
+  levelEl.textContent = String(level);
+  scoreEl.textContent = `${answered} / ${total}`;
+}
+
+// Add the Status HUD panel (top-right)
+const statusHud = L.control({ position: "topright" });
+
+statusHud.onAdd = function () {
+  const div = L.DomUtil.create("div", "sim-status");
+  div.innerHTML = `
+    <div class="sim-status-title">STATUS</div>
+    <div class="sim-status-line"><span>Curiosity Level</span><b id="cur-level">1</b></div>
+    <div class="sim-status-line"><span>Knowledge</span><b id="cur-score">0 / 0</b></div>
+  `;
+
+  L.DomEvent.disableClickPropagation(div);
+  L.DomEvent.disableScrollPropagation(div);
+  return div;
+};
+
+statusHud.addTo(map);
+
+// ===============================
 // Render knowledge node panel
 // ===============================
 function renderNodeCard(feature) {
@@ -186,6 +237,9 @@ function wirePopupBehavior(popup) {
 
     popup.setContent(renderNodeCard(feature));
     setTimeout(() => wirePopupBehavior(popup), 0);
+
+    // Update the status HUD whenever something changes
+    updateStatusHud();
   }, { passive: false });
 }
 
@@ -195,17 +249,24 @@ function wirePopupBehavior(popup) {
 fetch(`data/knowledge_nodes.geojson?v=${Date.now()}`)
   .then(r => r.json())
   .then(geojson => {
+    // Register total question count for status HUD
+    const totalQuestions = (geojson.features || []).reduce((sum, f) => {
+      const qs = f?.properties?.questions || [];
+      return sum + qs.length;
+    }, 0);
+    window._pcTotals = { totalQuestions };
+
     L.geoJSON(geojson, {
       pointToLayer: (feature, latlng) => {
         const kind = feature?.properties?.kind || "default";
-      
+
         // Base style for all knowledge nodes
         const base = {
           radius: 8,
           weight: 2,
           fillOpacity: 0.95
         };
-      
+
         // Per-kind styling (easy to tweak later)
         const stylesByKind = {
           hydrology:      { color: "#2c7be5", fillColor: "#2c7be5" }, // blue
@@ -215,9 +276,9 @@ fetch(`data/knowledge_nodes.geojson?v=${Date.now()}`)
           urban:          { color: "#7c3aed", fillColor: "#7c3aed" }, // purple
           default:        { color: "#2c7be5", fillColor: "#2c7be5" }
         };
-      
+
         const style = stylesByKind[kind] || stylesByKind.default;
-      
+
         return L.circleMarker(latlng, { ...base, ...style });
       },
 
@@ -226,9 +287,9 @@ fetch(`data/knowledge_nodes.geojson?v=${Date.now()}`)
           maxWidth: 340,
           autoPan: true,
           keepInView: true,
-          autoPanPaddingTopLeft: [20, 80],   // extra top padding so it never clips
+          autoPanPaddingTopLeft: [20, 80],
           autoPanPaddingBottomRight: [20, 20],
-          offset: L.point(0, 12)             // nudges popup down a bit
+          offset: L.point(0, 12)
         });
 
         layer.on("popupopen", (e) => {
@@ -241,6 +302,9 @@ fetch(`data/knowledge_nodes.geojson?v=${Date.now()}`)
         });
       }
     }).addTo(learningLayer);
+
+    // Update HUD once nodes are loaded
+    updateStatusHud();
   })
   .catch(err => {
     console.error(err);
@@ -255,11 +319,10 @@ fetch(`data/positive_news.geojson?v=${Date.now()}`)
   .then(geojson => {
     L.geoJSON(geojson, {
       pointToLayer: (feature, latlng) => {
-        // A simple “news pin” marker style
         return L.circleMarker(latlng, {
           radius: 9,
-          color: "#f0b429",      // golden outline
-          fillColor: "#f0b429",  // golden fill
+          color: "#f0b429",
+          fillColor: "#f0b429",
           weight: 2,
           fillOpacity: 0.95
         });
@@ -322,7 +385,6 @@ legend.onAdd = function () {
     </div>
   `;
 
-  // Prevent map drag when interacting with legend
   L.DomEvent.disableClickPropagation(div);
   L.DomEvent.disableScrollPropagation(div);
 
@@ -356,7 +418,6 @@ layersPanel.onAdd = function () {
   L.DomEvent.disableClickPropagation(div);
   L.DomEvent.disableScrollPropagation(div);
 
-  // Hook up toggles
   setTimeout(() => {
     const learnCb = div.querySelector("#toggle-learning");
     const newsCb = div.querySelector("#toggle-news");
