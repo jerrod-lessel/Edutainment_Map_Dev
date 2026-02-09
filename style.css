@@ -389,3 +389,34 @@ body {
 .sim-status-line b {
   font-weight: 700;
 }
+
+.sim-policies{
+  background: var(--hud-bg);
+  border: 2px solid var(--hud-border-dark);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 4px 4px 0 var(--hud-border-dark), 0 8px 20px rgba(0,0,0,0.25);
+  font-family: "VT323", monospace;
+  min-width: 180px;
+  position: relative;
+  margin-top: 10px; /* stacks nicely under STATUS if both are top-right */
+}
+
+.sim-policies::before{
+  content:"";
+  position:absolute;
+  inset:3px;
+  border-radius:10px;
+  border-top:2px solid var(--hud-highlight);
+  border-left:2px solid var(--hud-highlight);
+  border-right:2px solid var(--hud-border-mid);
+  border-bottom:2px solid var(--hud-border-mid);
+  pointer-events:none;
+}
+
+.sim-policies-title{
+  font-family:"Press Start 2P", monospace;
+  font-size:0.7rem;
+  margin-bottom:8px;
+  text-align:center;
+}
