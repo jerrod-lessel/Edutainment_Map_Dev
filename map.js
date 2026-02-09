@@ -289,3 +289,39 @@ fetch(`data/positive_news.geojson?v=${Date.now()}`)
     console.error(err);
   });
 
+// ===============================
+// SimCity-style Legend
+// ===============================
+const legend = L.control({ position: "bottomleft" });
+
+legend.onAdd = function () {
+  const div = L.DomUtil.create("div", "sim-legend");
+
+  div.innerHTML = `
+    <div class="sim-legend-title">CITY INFO</div>
+
+    <div class="sim-legend-item">
+      <span class="sim-dot hydrology"></span>
+      Water Systems
+    </div>
+
+    <div class="sim-legend-item">
+      <span class="sim-dot geomorphology"></span>
+      Landforms
+    </div>
+
+    <div class="sim-legend-item">
+      <span class="sim-dot news"></span>
+      Positive News
+    </div>
+  `;
+
+  // Prevent map drag when interacting with legend
+  L.DomEvent.disableClickPropagation(div);
+  L.DomEvent.disableScrollPropagation(div);
+
+  return div;
+};
+
+legend.addTo(map);
+
