@@ -281,6 +281,10 @@ body {
   background: #2c7be5;
 }
 
+.sim-dot.infrastructure {
+  background: #6b7280;
+}
+
 .sim-dot.geomorphology {
   background: #b7791f;
 }
