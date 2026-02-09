@@ -6,6 +6,7 @@
       "properties": {
         "id": "guadalupe_train_station_01",
         "kind": "infrastructure",
+        "minLevel": 2,
         "title": "Guadalupe Train Station",
         "subtitle": "Why rails show up where they do",
         "questions": [
@@ -57,6 +58,7 @@
       "properties": {
         "id": "sm_river_bed_01",
         "kind": "hydrology",
+        "minLevel": 1,
         "title": "Santa Maria River Bed",
         "subtitle": "Why a “dry” river still matters",
         "questions": [
@@ -108,6 +110,7 @@
       "properties": {
         "id": "guadalupe_dunes_01",
         "kind": "geomorphology",
+        "minLevel": 1,
         "title": "Guadalupe–Nipomo Dunes",
         "subtitle": "Why moving sand matters",
         "questions": [
