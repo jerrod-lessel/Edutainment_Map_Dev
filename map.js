@@ -400,7 +400,13 @@ fetch(`data/knowledge_nodes.geojson?v=${Date.now()}`)
         
           // Mark City Hall as visited
           if (feature?.properties?.id === "guadalupe_city_hall_01") {
-            localStorage.setItem("pc_visited_city_hall", "1");
+            const need = feature?.properties?.minLevel || 1;
+            const level = getCurrentLevel();
+          
+            // Only count as "visited" if City Hall is actually unlocked
+            if (level >= need) {
+              localStorage.setItem("pc_visited_city_hall", "1");
+            }
           }
         
           map.panInside(e.popup.getLatLng(), { padding: [20, 20] });
