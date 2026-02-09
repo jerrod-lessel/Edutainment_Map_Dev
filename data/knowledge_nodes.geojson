@@ -4,6 +4,57 @@
     {
       "type": "Feature",
       "properties": {
+        "id": "guadalupe_train_station_01",
+        "kind": "infrastructure",
+        "title": "Guadalupe Train Station",
+        "subtitle": "Why rails show up where they do",
+        "questions": [
+          {
+            "level": 1,
+            "question": "Why would a train station be placed here instead of, say, on a random hill?",
+            "choices": [
+              "Trains love scenery and vibes.",
+              "Flat land is easier, and stations sit where people + goods need access.",
+              "Because the loudest whistle echoes best here.",
+              "Because maps needed more icons."
+            ],
+            "correct": 1,
+            "explain": "Railroads prefer gentle slopes and stable ground. Stations also go where they can serve people, farms/industry, and connections to roads or ports."
+          },
+          {
+            "level": 2,
+            "question": "What’s one big reason rail lines avoid steep grades?",
+            "choices": [
+              "Trains get dizzy on slopes.",
+              "Steel wheels on steel rails don’t get much traction for climbing.",
+              "Gravity stops working above 2% grade.",
+              "It makes the tickets more expensive."
+            ],
+            "correct": 1,
+            "explain": "Trains have low traction compared to rubber tires. Steep grades drastically reduce hauling capacity and can require special engines or operational limits."
+          },
+          {
+            "level": 3,
+            "question": "If engineers want to keep a rail grade at 1%, what does that mean?",
+            "choices": [
+              "The track rises 1 foot for every 100 feet of horizontal distance.",
+              "The track rises 100 feet for every 1 foot of horizontal distance.",
+              "The track is perfectly flat, always.",
+              "The track can turn 90 degrees without slowing down."
+            ],
+            "correct": 0,
+            "explain": "A 1% grade means 1 unit of rise per 100 units of run (like 1 ft up per 100 ft forward). Railroads generally aim for low grades when possible."
+          }
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-120.5748, 34.9712]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
         "id": "sm_river_bed_01",
         "kind": "hydrology",
         "title": "Santa Maria River Bed",
