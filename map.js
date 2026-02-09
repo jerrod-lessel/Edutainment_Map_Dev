@@ -84,7 +84,7 @@ function setProgress(nodeId, idx) {
 }
 
 function hasVisitedCityHall() {
-  return localStorage.getItem("pc_visited_city_hall") === "1";
+  return hasVisitedCityHall();
 }
 
 // ===============================
@@ -115,6 +115,10 @@ function updateStatusHud() {
   const levelEl = document.getElementById("cur-level");
   const scoreEl = document.getElementById("cur-score");
   if (!levelEl || !scoreEl) return;
+  // Safety: never allow City Hall "visited" to persist below Level 2
+  if (getCurrentLevel() < 2) {
+    localStorage.removeItem("pc_visited_city_hall");
+  }
 
   const { answered, total } = computeOverallProgress();
 
@@ -131,12 +135,15 @@ function updateStatusHud() {
     map._popup.setContent(level >= need ? renderNodeCard(f) : renderLockedCard(f));
     setTimeout(() => wirePopupBehavior(map._popup), 0);
   }
-    // Show/hide POLICIES panel at Level 2+ and has visited city hall
-    const pol = document.querySelector(".sim-policies");
-    if (pol) {
-      const unlocked = getCurrentLevel() >= 2 && hasVisitedCityHall();
-      pol.style.display = unlocked ? "block" : "none";
-    }
+  // Show/hide POLICIES panel at Level 2+ and has visited city hall
+  const pol = document.querySelector(".sim-policies");
+  if (pol) {
+    const unlocked =
+      getCurrentLevel() >= 2 &&
+      localStorage.getItem("pc_visited_city_hall") === "1";
+    
+    pol.style.display = unlocked ? "block" : "none";
+  }
 }
 
 // Add the Status HUD panel (top-right)
