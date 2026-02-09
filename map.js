@@ -426,6 +426,11 @@ legend.onAdd = function () {
     </div>
 
     <div class="sim-legend-item">
+      <span class="sim-dot urban"></span>
+      Development
+    </div>
+
+    <div class="sim-legend-item">
       <span class="sim-dot news"></span>
       Positive News
     </div>
