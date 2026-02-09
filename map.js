@@ -20,6 +20,7 @@ L.tileLayer(
 // ===============================
 const learningLayer = L.layerGroup().addTo(map);
 const newsLayer = L.layerGroup().addTo(map);
+const policiesLayer = L.layerGroup(); // not added by default
 
 // ===============================
 // Guadalupe bounds
@@ -40,6 +41,17 @@ L.rectangle(guadalupeBounds, {
   dashArray: '4,4',
   fillOpacity: 0
 }).addTo(map);
+
+// ===============================
+// Policies Layer (placeholder overlay)
+// ===============================
+const policyBoundary = L.rectangle(guadalupeBounds, {
+  color: "#3b3a35",
+  weight: 2,
+  dashArray: "2,6",
+  fillOpacity: 0
+});
+policyBoundary.addTo(policiesLayer);
 
 // ===============================
 // Utilities
@@ -115,6 +127,11 @@ function updateStatusHud() {
     map._popup.setContent(level >= need ? renderNodeCard(f) : renderLockedCard(f));
     setTimeout(() => wirePopupBehavior(map._popup), 0);
   }
+    // Show/hide POLICIES panel at Level 2+
+    const pol = document.querySelector(".sim-policies");
+    if (pol) {
+      pol.style.display = (getCurrentLevel() >= 2) ? "block" : "none";
+    }
 }
 
 // Add the Status HUD panel (top-right)
@@ -270,6 +287,7 @@ function wirePopupBehavior(popup) {
     if (level < need) {
       // Locked: ignore button clicks and just keep the locked view
       popup.setContent(renderLockedCard(feature));
+      setTimeout(() => wirePopupBehavior(popup), 0);
       return;
     }
     popup.setContent(level >= need ? renderNodeCard(feature) : renderLockedCard(feature));
@@ -279,6 +297,44 @@ function wirePopupBehavior(popup) {
     updateStatusHud();
   }, { passive: false });
 }
+
+// ===============================
+// SimCity-style Policies Panel (locked until Level 2)
+// ===============================
+const policiesPanel = L.control({ position: "topright" });
+
+policiesPanel.onAdd = function () {
+  const div = L.DomUtil.create("div", "sim-policies");
+  div.style.display = "none"; // hidden until unlocked
+
+  div.innerHTML = `
+    <div class="sim-policies-title">POLICIES</div>
+
+    <label class="sim-layer-item">
+      <input type="checkbox" id="toggle-policies" />
+      <span>District Boundary</span>
+    </label>
+
+    <div class="pc-qmeta" style="margin-top:6px;">
+      More policies unlock later (zoning, land cover, transit, etc.)
+    </div>
+  `;
+
+  L.DomEvent.disableClickPropagation(div);
+  L.DomEvent.disableScrollPropagation(div);
+
+  setTimeout(() => {
+    const cb = div.querySelector("#toggle-policies");
+    cb.addEventListener("change", () => {
+      if (cb.checked) map.addLayer(policiesLayer);
+      else map.removeLayer(policiesLayer);
+    });
+  }, 0);
+
+  return div;
+};
+
+policiesPanel.addTo(map);
 
 // ===============================
 // Load knowledge nodes
