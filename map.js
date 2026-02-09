@@ -90,6 +90,11 @@ function computeOverallProgress() {
   return { answered, total: window._pcTotals.totalQuestions || 0 };
 }
 
+function getCurrentLevel() {
+  const { answered } = computeOverallProgress();
+  return 1 + Math.floor(answered / 3);
+}
+
 function updateStatusHud() {
   const levelEl = document.getElementById("cur-level");
   const scoreEl = document.getElementById("cur-score");
@@ -102,6 +107,14 @@ function updateStatusHud() {
 
   levelEl.textContent = String(level);
   scoreEl.textContent = `${answered} / ${total}`;
+  // If a popup is open, refresh it so locked nodes can unlock live
+  if (map && map._popup && map._popup._pcFeature) {
+    const f = map._popup._pcFeature;
+    const need = f?.properties?.minLevel || 1;
+    const level = getCurrentLevel();
+    map._popup.setContent(level >= need ? renderNodeCard(f) : renderLockedCard(f));
+    setTimeout(() => wirePopupBehavior(map._popup), 0);
+  }
 }
 
 // Add the Status HUD panel (top-right)
@@ -184,6 +197,23 @@ function renderNodeCard(feature) {
   `;
 }
 
+function renderLockedCard(feature) {
+  const p = feature.properties || {};
+  const need = p.minLevel || 1;
+
+  return `
+    <div class="pc-card">
+      <div class="pc-title">🔒 LOCKED</div>
+      <div class="pc-subtitle">${escapeHtml(p.title || "Knowledge Node")}</div>
+      <div class="pc-question">
+        Reach <b>Curiosity Level ${need}</b> to unlock this node.
+      </div>
+      <div class="pc-qmeta">Tip: answer more questions to level up.</div>
+    </div>
+  `;
+}
+
+
 // ===============================
 // Popup interaction logic
 // ===============================
@@ -235,7 +265,14 @@ function wirePopupBehavior(popup) {
       }
     }
 
-    popup.setContent(renderNodeCard(feature));
+    const need = feature?.properties?.minLevel || 1;
+    const level = getCurrentLevel();
+    if (level < need) {
+      // Locked: ignore button clicks and just keep the locked view
+      popup.setContent(renderLockedCard(feature));
+      return;
+    }
+    popup.setContent(level >= need ? renderNodeCard(feature) : renderLockedCard(feature));
     setTimeout(() => wirePopupBehavior(popup), 0);
 
     // Update the status HUD whenever something changes
@@ -283,7 +320,11 @@ fetch(`data/knowledge_nodes.geojson?v=${Date.now()}`)
       },
 
       onEachFeature: (feature, layer) => {
-        layer.bindPopup(() => renderNodeCard(feature), {
+        layer.bindPopup(() => {
+          const need = feature?.properties?.minLevel || 1;
+          const level = getCurrentLevel();
+          return (level >= need) ? renderNodeCard(feature) : renderLockedCard(feature);
+        }, {
           maxWidth: 340,
           autoPan: true,
           keepInView: true,
