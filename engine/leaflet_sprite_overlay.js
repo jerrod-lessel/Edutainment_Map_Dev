@@ -65,6 +65,9 @@ export class SpriteOverlay extends L.Layer {
     const ctx = this._ctx;
     if (!map || !ctx) return;
 
+    // Don't render when zoomed too far out
+    if (map.getZoom() < 12) return;
+    
     ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     ctx.imageSmoothingEnabled = false;
 
