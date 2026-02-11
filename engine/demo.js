@@ -1,91 +1,96 @@
 import { computeMaskGrid } from './autotile.js';
+import { rasterizeRoadsToGrid } from './rasterize_roads.js';
 
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 
-const cols = 20;
-const rows = 20;
-const cellPx = 24;
+const cellSizeMeters = 10;
 
-canvas.width = cols * cellPx;
-canvas.height = rows * cellPx;
+// Your Guadalupe bounds from earlier code
+const bounds = {
+  west: -120.640,
+  south: 34.920,
+  east: -120.500,
+  north: 35.010
+};
 
-// Build a fake road grid: a plus sign
-const grid = new Uint8Array(cols * rows);
-
-// Horizontal road
-const hy = 10;
-for (let x = 3; x <= 16; x++) grid[hy * cols + x] = 1;
-
-// Vertical road
-const vx = 10;
-for (let y = 3; y <= 16; y++) grid[y * cols + vx] = 1;
-
-// Compute bitmask per road cell
-const masks = computeMaskGrid(grid, cols, rows);
-
-// Sprite atlas config (matches make_sprites.html layout)
+// Sprite atlas config (same mapping you already fixed)
 const atlas = {
   imgUrl: './sprites_placeholder.png',
   tilePx: 32,
   map: {
-    1:  { tx: 2, ty: 0 }, // N (was S)
-    2:  { tx: 3, ty: 0 }, // E (was W)
-    4:  { tx: 0, ty: 0 }, // S (was N)
-    8:  { tx: 1, ty: 0 }, // W (was E)
+    1:  { tx: 2, ty: 0 },
+    2:  { tx: 3, ty: 0 },
+    4:  { tx: 0, ty: 0 },
+    8:  { tx: 1, ty: 0 },
 
-    5:  { tx: 0, ty: 1 }, // NS
-    10: { tx: 1, ty: 1 }, // EW
+    5:  { tx: 0, ty: 1 },
+    10: { tx: 1, ty: 1 },
 
-    3:  { tx: 2, ty: 2 }, // NE (was SW)
-    6:  { tx: 3, ty: 2 }, // ES (was WN)
-    12: { tx: 0, ty: 2 }, // SW (was NE)
-    9:  { tx: 1, ty: 2 }, // WN (was ES)
+    3:  { tx: 2, ty: 2 },
+    6:  { tx: 3, ty: 2 },
+    12: { tx: 0, ty: 2 },
+    9:  { tx: 1, ty: 2 },
 
-    7:  { tx: 2, ty: 3 },  // N+E+S (was T¬E)
-    14: { tx: 3, ty: 3 },  // E+S+W (was T¬S)
-    13: { tx: 0, ty: 3 },  // N+S+W (was T¬W)
-    11: { tx: 1, ty: 3 },  // N+E+W (was T¬N)
+    7:  { tx: 2, ty: 3 },
+    14: { tx: 3, ty: 3 },
+    13: { tx: 0, ty: 3 },
+    11: { tx: 1, ty: 3 },
 
-    15: { tx: 0, ty: 4 }, // +
+    15: { tx: 0, ty: 4 }
   }
 };
 
-function drawGridBackground() {
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      ctx.fillStyle = '#e8eef6';
-      ctx.fillRect(x * cellPx, y * cellPx, cellPx, cellPx);
-      ctx.strokeStyle = '#c7d2e3';
-      ctx.strokeRect(x * cellPx, y * cellPx, cellPx, cellPx);
-    }
-  }
-}
+// Visual scale for demo (pixels per grid cell)
+const cellPx = 4; // try 3–6 depending on how big you want it
 
 function drawSprite(img, tx, ty, dx, dy, dSize) {
   const s = atlas.tilePx;
-  ctx.drawImage(
-    img,
-    tx * s, ty * s, s, s,
-    dx, dy, dSize, dSize
-  );
+  ctx.drawImage(img, tx * s, ty * s, s, s, dx, dy, dSize, dSize);
 }
 
-// Load atlas image then render
-const img = new Image();
-img.onload = () => {
-  drawGridBackground();
+async function main() {
+  // Load real roads GeoJSON
+  const roads = await fetch('./eng_data/roads_guadalupe.geojson').then(r => r.json());
 
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      const mask = masks[y * cols + x];
-      if (mask === 0) continue;
+  // Rasterize to 10m grid
+  const { grid, cols, rows } = rasterizeRoadsToGrid({
+    geojson: roads,
+    bounds,
+    cellSizeMeters,
+    brush: 1
+  });
 
-      const entry = atlas.map[mask];
-      if (!entry) continue; // unknown mask (shouldn't happen in this demo)
+  // Compute autotile masks
+  const masks = computeMaskGrid(grid, cols, rows);
 
-      drawSprite(img, entry.tx, entry.ty, x * cellPx, y * cellPx, cellPx);
+  // Size canvas to fit grid
+  canvas.width = cols * cellPx;
+  canvas.height = rows * cellPx;
+
+  // Load atlas image and render
+  const img = new Image();
+  img.onload = () => {
+    ctx.imageSmoothingEnabled = false;
+
+    // background
+    ctx.fillStyle = '#e8eef6';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // draw road sprites
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const mask = masks[y * cols + x];
+        if (mask === 0) continue;
+
+        const entry = atlas.map[mask];
+        if (!entry) continue;
+
+        drawSprite(img, entry.tx, entry.ty, x * cellPx, y * cellPx, cellPx);
+      }
     }
-  }
-};
-img.src = atlas.imgUrl;
+  };
+  img.src = atlas.imgUrl;
+}
+
+main();
