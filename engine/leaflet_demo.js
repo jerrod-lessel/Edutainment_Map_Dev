@@ -46,7 +46,6 @@ async function main() {
 
   // Load roads
   const roads = await fetch('./eng_data/roads_guadalupe.geojson').then(r => r.json());
-  console.log('atlas loaded', atlasImg.width, atlasImg.height);
   
   // Rasterize
   const { grid, cols, rows } = rasterizeRoadsToGrid({
@@ -58,6 +57,9 @@ async function main() {
 
   // Masks
   const masks = computeMaskGrid(grid, cols, rows);
+  
+  // Grid origin (SW) in WebMercator meters
+  const sw = project(bounds.west, bounds.south);
 
   console.log('grid size', cols, rows);
   let roadCells = 0;
@@ -68,9 +70,6 @@ async function main() {
   for (const m of masks) if (m !== 0) maskCells++;
   console.log('mask cells', maskCells);
   
-  // Grid origin (SW) in WebMercator meters
-  const sw = project(bounds.west, bounds.south);
-
   // Load atlas image
   const atlasImg = await new Promise((resolve, reject) => {
     const img = new Image();
@@ -79,6 +78,8 @@ async function main() {
     img.src = './sprites_placeholder.png';
   });
 
+  console.log('atlas loaded', atlasImg.width, atlasImg.height);
+  
   // Add overlay
   const overlay = new SpriteOverlay({
     cols, rows,
