@@ -3,24 +3,23 @@ export class SpriteOverlay extends L.Layer {
   constructor(options) {
     super();
     this.options = options;
+    this._map = null;
     this._canvas = null;
     this._ctx = null;
-    this._map = null;
-    this._topLeft = null; // world pixel top-left of the canvas
   }
 
   onAdd(map) {
     this._map = map;
 
-    this._canvas = L.DomUtil.create('canvas', 'leaflet-layer');
-    this._canvas.style.pointerEvents = 'none';
-
-    // Put on a custom pane above tiles
+    // Ensure we draw above tiles
     const paneName = 'spritePane';
     if (!map.getPane(paneName)) {
       map.createPane(paneName);
-      map.getPane(paneName).style.zIndex = 650; // above tilePane
+      map.getPane(paneName).style.zIndex = 650;
     }
+
+    this._canvas = L.DomUtil.create('canvas', 'leaflet-layer');
+    this._canvas.style.pointerEvents = 'none';
     map.getPane(paneName).appendChild(this._canvas);
 
     this._ctx = this._canvas.getContext('2d');
@@ -35,7 +34,6 @@ export class SpriteOverlay extends L.Layer {
     this._canvas = null;
     this._ctx = null;
     this._map = null;
-    this._topLeft = null;
   }
 
   _reset() {
@@ -45,11 +43,9 @@ export class SpriteOverlay extends L.Layer {
     this._canvas.width = size.x;
     this._canvas.height = size.y;
 
-    // Use world pixel bounds for stable placement
-    this._topLeft = this._map.getPixelBounds().min;
-
-    // Position canvas in world pixel space
-    L.DomUtil.setPosition(this._canvas, this._topLeft);
+    // Anchor canvas to the map container (correct DOM positioning)
+    const topLeft = this._map.containerPointToLayerPoint([0, 0]);
+    L.DomUtil.setPosition(this._canvas, topLeft);
 
     this._draw();
   }
@@ -57,7 +53,7 @@ export class SpriteOverlay extends L.Layer {
   _draw() {
     const {
       cols, rows,
-      sw, ne,                 // projected meters (EPSG:3857)
+      sw, ne,                 // EPSG:3857 meters
       cellSizeMeters,
       masks,
       atlasImg,
@@ -65,58 +61,68 @@ export class SpriteOverlay extends L.Layer {
       atlasMap
     } = this.options;
 
-    const ctx = this._ctx;
     const map = this._map;
-    if (!ctx || !map) return;
+    const ctx = this._ctx;
+    if (!map || !ctx) return;
 
     ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     ctx.imageSmoothingEnabled = false;
 
-    // Compute NW corner in projected meters: (sw.x, ne.y)
-    const nwProjected = L.point(sw.x, ne.y);
-    const nwLatLng = L.CRS.EPSG3857.unproject(nwProjected);
+    // 1) Get current map bounds in EPSG:3857 meters
+    const b = map.getBounds();
+    const bSW = L.CRS.EPSG3857.project(b.getSouthWest());
+    const bNE = L.CRS.EPSG3857.project(b.getNorthEast());
 
-    // Convert NW to world pixel coords at current zoom
-    const zoom = map.getZoom();
-    const nwWorldPx = map.project(nwLatLng, zoom);
+    // 2) Compute overlap between map bounds and our grid bounds
+    const left = Math.max(sw.x, bSW.x);
+    const right = Math.min(ne.x, bNE.x);
+    const top = Math.min(ne.y, bNE.y);
+    const bottom = Math.max(sw.y, bSW.y);
 
-    // Determine pixel size of one grid cell (10m) at this zoom
-    const originLatLng = L.CRS.EPSG3857.unproject(L.point(sw.x, sw.y));
-    const stepLatLng = L.CRS.EPSG3857.unproject(L.point(sw.x + cellSizeMeters, sw.y));
-    const p0 = map.project(originLatLng, zoom);
-    const p1 = map.project(stepLatLng, zoom);
+    // If no overlap, draw nothing
+    if (left >= right || bottom >= top) return;
+
+    // 3) Convert overlap bounds to grid indices
+    const minCol = Math.max(0, Math.floor((left - sw.x) / cellSizeMeters) - 2);
+    const maxCol = Math.min(cols - 1, Math.floor((right - sw.x) / cellSizeMeters) + 2);
+
+    // rows are counted from the top (ne.y downward), matching your rasterizer
+    const minRow = Math.max(0, Math.floor((ne.y - top) / cellSizeMeters) - 2);
+    const maxRow = Math.min(rows - 1, Math.floor((ne.y - bottom) / cellSizeMeters) + 2);
+
+    // 4) Compute how many pixels a 10m step is at current zoom (use local measurement)
+    const testY = ne.y - minRow * cellSizeMeters;
+    const p0LL = L.CRS.EPSG3857.unproject(L.point(sw.x, testY));
+    const p1LL = L.CRS.EPSG3857.unproject(L.point(sw.x + cellSizeMeters, testY));
+    const p0 = map.latLngToContainerPoint(p0LL);
+    const p1 = map.latLngToContainerPoint(p1LL);
     const cellPx = Math.max(1, Math.round(Math.abs(p1.x - p0.x)));
 
-    // Visible region in world pixels
-    const view = map.getPixelBounds();
+    // 5) Draw sprites for visible cells
+    for (let r = minRow; r <= maxRow; r++) {
+      const yMeters = ne.y - r * cellSizeMeters; // NW corner y for this row
 
-    // Compute visible grid range (in grid coords)
-    const minCol = Math.max(0, Math.floor((view.min.x - nwWorldPx.x) / cellPx) - 2);
-    const maxCol = Math.min(cols - 1, Math.floor((view.max.x - nwWorldPx.x) / cellPx) + 2);
-    const minRow = Math.max(0, Math.floor((view.min.y - nwWorldPx.y) / cellPx) - 2);
-    const maxRow = Math.min(rows - 1, Math.floor((view.max.y - nwWorldPx.y) / cellPx) + 2);
-
-    // Draw
-    for (let y = minRow; y <= maxRow; y++) {
-      for (let x = minCol; x <= maxCol; x++) {
-        const mask = masks[y * cols + x];
+      for (let c = minCol; c <= maxCol; c++) {
+        const mask = masks[r * cols + c];
         if (!mask) continue;
 
         const entry = atlasMap[mask];
         if (!entry) continue;
 
+        const xMeters = sw.x + c * cellSizeMeters; // NW corner x for this col
+
+        const ll = L.CRS.EPSG3857.unproject(L.point(xMeters, yMeters));
+        const pt = map.latLngToContainerPoint(ll);
+
         const sx = entry.tx * atlasTilePx;
         const sy = entry.ty * atlasTilePx;
 
-        // World pixel location of this grid cell
-        const wx = nwWorldPx.x + x * cellPx;
-        const wy = nwWorldPx.y + y * cellPx;
-
-        // Convert to canvas pixel coords by subtracting canvas top-left world pixel
-        const dx = wx - this._topLeft.x;
-        const dy = wy - this._topLeft.y;
-
-        ctx.drawImage(atlasImg, sx, sy, atlasTilePx, atlasTilePx, dx, dy, cellPx, cellPx);
+        ctx.drawImage(
+          atlasImg,
+          sx, sy, atlasTilePx, atlasTilePx,
+          pt.x, pt.y,
+          cellPx, cellPx
+        );
       }
     }
   }
