@@ -42,7 +42,7 @@ const atlas = {
 };
 
 // Visual scale for demo (pixels per grid cell)
-const cellPx = 4; // try 3–6 depending on how big you want it
+const cellPx = 10; // try 3–6 depending on how big you want it
 
 function drawSprite(img, tx, ty, dx, dy, dSize) {
   const s = atlas.tilePx;
