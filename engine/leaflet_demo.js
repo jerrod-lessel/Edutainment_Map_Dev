@@ -60,6 +60,7 @@ async function main() {
   
   // Grid origin (SW) in WebMercator meters
   const sw = project(bounds.west, bounds.south);
+  const ne = project(bounds.east, bounds.north);
 
   console.log('grid size', cols, rows);
   let roadCells = 0;
@@ -83,7 +84,7 @@ async function main() {
   // Add overlay
   const overlay = new SpriteOverlay({
     cols, rows,
-    origin: { x: sw.x, y: sw.y },
+    sw, ne,
     cellSizeMeters,
     masks,
     atlasImg,
