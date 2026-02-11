@@ -15,7 +15,12 @@ export class SpriteOverlay extends L.Layer {
     this._canvas.style.pointerEvents = 'none';
     this._ctx = this._canvas.getContext('2d');
 
-    map.getPane('overlayPane').appendChild(this._canvas);
+    const paneName = 'spritePane';
+    if (!map.getPane(paneName)) {
+      map.createPane(paneName);
+      map.getPane(paneName).style.zIndex = 650; // above tilePane (usually 200)
+    }
+    map.getPane(paneName).appendChild(this._canvas);
 
     this._reset();
     map.on('move zoom resize', this._reset, this);
