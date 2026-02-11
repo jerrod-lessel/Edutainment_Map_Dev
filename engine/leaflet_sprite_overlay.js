@@ -50,7 +50,7 @@ export class SpriteOverlay extends L.Layer {
   _draw() {
     const {
       cols, rows,
-      origin,            // { x, y } in EPSG:3857 meters (SW corner)
+      sw, ne,            
       cellSizeMeters,
       masks,
       atlasImg,
@@ -63,14 +63,14 @@ export class SpriteOverlay extends L.Layer {
     ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     ctx.imageSmoothingEnabled = false;
 
-    // Convert our grid NW corner to latlng
-    const nwProjected = L.point(origin.x, origin.y + rows * cellSizeMeters);
+    // NW corner in projected meters is (sw.x, ne.y)
+    const nwProjected = L.point(sw.x, ne.y);
     const nwLatLng = L.CRS.EPSG3857.unproject(nwProjected);
     const nwPx = map.latLngToContainerPoint(nwLatLng);
 
     // How many pixels is one grid cell at current zoom?
-    const originLatLng = L.CRS.EPSG3857.unproject(L.point(origin.x, origin.y));
-    const stepLatLng = L.CRS.EPSG3857.unproject(L.point(origin.x + cellSizeMeters, origin.y));
+    const originLatLng = L.CRS.EPSG3857.unproject(L.point(sw.x, sw.y));
+    const stepLatLng = L.CRS.EPSG3857.unproject(L.point(sw.x + cellSizeMeters, sw.y));
     const p0 = map.latLngToContainerPoint(originLatLng);
     const p1 = map.latLngToContainerPoint(stepLatLng);
     const cellPx = Math.max(1, Math.round(Math.abs(p1.x - p0.x)));
