@@ -1,4 +1,3 @@
-// engine/demo.js
 import { computeMaskGrid } from './autotile.js';
 
 const canvas = document.getElementById('c');
@@ -25,50 +24,68 @@ for (let y = 3; y <= 16; y++) grid[y * cols + vx] = 1;
 // Compute bitmask per road cell
 const masks = computeMaskGrid(grid, cols, rows);
 
-// Simple placeholder draw: color by mask type + label
-function maskLabel(mask) {
-  if (mask === 0) return '';
-  if (mask === 15) return '+';
-  if (mask === 5) return '|';
-  if (mask === 10) return '—';
-  if ([3,6,9,12].includes(mask)) return 'L';
-  if ([7,11,13,14].includes(mask)) return 'T';
-  return 'o'; // endcap or unknown
-}
+// Sprite atlas config (matches make_sprites.html layout)
+const atlas = {
+  imgUrl: './sprites_placeholder.png',
+  tilePx: 32,
+  map: {
+    1:  { tx: 0, ty: 0 }, // N
+    2:  { tx: 1, ty: 0 }, // E
+    4:  { tx: 2, ty: 0 }, // S
+    8:  { tx: 3, ty: 0 }, // W
 
-function maskColor(mask) {
-  if (mask === 0) return '#e8eef6'; // background
-  if (mask === 15) return '#444';   // intersection
-  if ([5,10].includes(mask)) return '#555';
-  if ([3,6,9,12].includes(mask)) return '#666';
-  if ([7,11,13,14].includes(mask)) return '#777';
-  return '#888';
-}
+    5:  { tx: 0, ty: 1 }, // NS
+    10: { tx: 1, ty: 1 }, // EW
 
-// Render
-ctx.font = '12px monospace';
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
+    3:  { tx: 0, ty: 2 }, // NE
+    6:  { tx: 1, ty: 2 }, // ES
+    12: { tx: 2, ty: 2 }, // SW
+    9:  { tx: 3, ty: 2 }, // WN
 
-for (let y = 0; y < rows; y++) {
-  for (let x = 0; x < cols; x++) {
-    const mask = masks[y * cols + x];
+    7:  { tx: 0, ty: 3 }, // T¬W (N+E+S)
+    14: { tx: 1, ty: 3 }, // T¬N (E+S+W)
+    13: { tx: 2, ty: 3 }, // T¬E (N+S+W)
+    11: { tx: 3, ty: 3 }, // T¬S (N+E+W)
 
-    // cell background
-    ctx.fillStyle = '#e8eef6';
-    ctx.fillRect(x * cellPx, y * cellPx, cellPx, cellPx);
+    15: { tx: 0, ty: 4 }, // +
+  }
+};
 
-    // road cell
-    if (mask !== 0) {
-      ctx.fillStyle = maskColor(mask);
-      ctx.fillRect(x * cellPx + 2, y * cellPx + 2, cellPx - 4, cellPx - 4);
-
-      ctx.fillStyle = 'white';
-      ctx.fillText(maskLabel(mask), x * cellPx + cellPx / 2, y * cellPx + cellPx / 2);
+function drawGridBackground() {
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      ctx.fillStyle = '#e8eef6';
+      ctx.fillRect(x * cellPx, y * cellPx, cellPx, cellPx);
+      ctx.strokeStyle = '#c7d2e3';
+      ctx.strokeRect(x * cellPx, y * cellPx, cellPx, cellPx);
     }
-
-    // grid lines
-    ctx.strokeStyle = '#c7d2e3';
-    ctx.strokeRect(x * cellPx, y * cellPx, cellPx, cellPx);
   }
 }
+
+function drawSprite(img, tx, ty, dx, dy, dSize) {
+  const s = atlas.tilePx;
+  ctx.drawImage(
+    img,
+    tx * s, ty * s, s, s,
+    dx, dy, dSize, dSize
+  );
+}
+
+// Load atlas image then render
+const img = new Image();
+img.onload = () => {
+  drawGridBackground();
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const mask = masks[y * cols + x];
+      if (mask === 0) continue;
+
+      const entry = atlas.map[mask];
+      if (!entry) continue; // unknown mask (shouldn't happen in this demo)
+
+      drawSprite(img, entry.tx, entry.ty, x * cellPx, y * cellPx, cellPx);
+    }
+  }
+};
+img.src = atlas.imgUrl;
