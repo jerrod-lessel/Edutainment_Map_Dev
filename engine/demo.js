@@ -29,23 +29,23 @@ const atlas = {
   imgUrl: './sprites_placeholder.png',
   tilePx: 32,
   map: {
-    1:  { tx: 0, ty: 0 }, // N
-    2:  { tx: 1, ty: 0 }, // E
-    4:  { tx: 2, ty: 0 }, // S
-    8:  { tx: 3, ty: 0 }, // W
+    1:  { tx: 2, ty: 0 }, // N (was S)
+    2:  { tx: 3, ty: 0 }, // E (was W)
+    4:  { tx: 0, ty: 0 }, // S (was N)
+    8:  { tx: 1, ty: 0 }, // W (was E)
 
     5:  { tx: 0, ty: 1 }, // NS
     10: { tx: 1, ty: 1 }, // EW
 
-    3:  { tx: 0, ty: 2 }, // NE
-    6:  { tx: 1, ty: 2 }, // ES
-    12: { tx: 2, ty: 2 }, // SW
-    9:  { tx: 3, ty: 2 }, // WN
+    3:  { tx: 2, ty: 2 }, // NE (was SW)
+    6:  { tx: 3, ty: 2 }, // ES (was WN)
+    12: { tx: 0, ty: 2 }, // SW (was NE)
+    9:  { tx: 1, ty: 2 }, // WN (was ES)
 
-    7:  { tx: 0, ty: 3 }, // T¬W (N+E+S)
-    14: { tx: 1, ty: 3 }, // T¬N (E+S+W)
-    13: { tx: 2, ty: 3 }, // T¬E (N+S+W)
-    11: { tx: 3, ty: 3 }, // T¬S (N+E+W)
+    7:  { tx: 2, ty: 3 },  // N+E+S (was T¬E)
+    14: { tx: 3, ty: 3 },  // E+S+W (was T¬S)
+    13: { tx: 0, ty: 3 },  // N+S+W (was T¬W)
+    11: { tx: 1, ty: 3 },  // N+E+W (was T¬N)
 
     15: { tx: 0, ty: 4 }, // +
   }
