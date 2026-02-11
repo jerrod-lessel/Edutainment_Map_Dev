@@ -1,0 +1,91 @@
+// /engine/rasterize_roads.js
+import { project } from './webmercator.js';
+
+function bresenham(x0, y0, x1, y1, plot) {
+  let dx = Math.abs(x1 - x0);
+  let dy = Math.abs(y1 - y0);
+  let sx = x0 < x1 ? 1 : -1;
+  let sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+
+  while (true) {
+    plot(x0, y0);
+    if (x0 === x1 && y0 === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; x0 += sx; }
+    if (e2 < dx) { err += dx; y0 += sy; }
+  }
+}
+
+function extractRoadLines(geojson) {
+  // Overpass GeoJSON often exports ways as LineString with coordinates already.
+  // We'll handle FeatureCollection with LineString/MultiLineString.
+  const lines = [];
+
+  const walk = (g) => {
+    if (!g) return;
+    if (g.type === 'FeatureCollection') g.features.forEach(walk);
+    else if (g.type === 'Feature') walk(g.geometry);
+    else if (g.type === 'LineString') lines.push(g.coordinates);
+    else if (g.type === 'MultiLineString') g.coordinates.forEach(l => lines.push(l));
+    else if (g.type === 'GeometryCollection') g.geometries.forEach(walk);
+  };
+
+  walk(geojson);
+  return lines;
+}
+
+export function rasterizeRoadsToGrid({
+  geojson,
+  bounds,          // { west, south, east, north } in lon/lat
+  cellSizeMeters,  // 10
+  brush = 1        // thickness in cells
+}) {
+  // Project bounds to meters
+  const sw = project(bounds.west, bounds.south);
+  const ne = project(bounds.east, bounds.north);
+
+  const widthM = ne.x - sw.x;
+  const heightM = ne.y - sw.y;
+
+  const cols = Math.ceil(widthM / cellSizeMeters);
+  const rows = Math.ceil(heightM / cellSizeMeters);
+
+  const grid = new Uint8Array(cols * rows);
+
+  const burn = (cx, cy) => {
+    for (let dy = -brush; dy <= brush; dy++) {
+      for (let dx = -brush; dx <= brush; dx++) {
+        const x = cx + dx;
+        const y = cy + dy;
+        if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
+        grid[y * cols + x] = 1;
+      }
+    }
+  };
+
+  const toCell = (lon, lat) => {
+    const p = project(lon, lat);
+    const cx = Math.floor((p.x - sw.x) / cellSizeMeters);
+    // y increases downward in canvas; WebMercator y increases upward,
+    // so we flip by measuring from the top (ne.y).
+    const cy = Math.floor((ne.y - p.y) / cellSizeMeters);
+    return { cx, cy };
+  };
+
+  const lines = extractRoadLines(geojson);
+
+  for (const line of lines) {
+    for (let i = 0; i < line.length - 1; i++) {
+      const [lon0, lat0] = line[i];
+      const [lon1, lat1] = line[i + 1];
+
+      const a = toCell(lon0, lat0);
+      const b = toCell(lon1, lat1);
+
+      bresenham(a.cx, a.cy, b.cx, b.cy, (x, y) => burn(x, y));
+    }
+  }
+
+  return { grid, cols, rows };
+}
