@@ -58,7 +58,7 @@ async function main() {
     geojson: roads,
     bounds,
     cellSizeMeters,
-    brush: 2
+    brush: 1
   });
 
   // Compute autotile masks
