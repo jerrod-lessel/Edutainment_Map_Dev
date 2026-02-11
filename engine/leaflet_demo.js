@@ -59,6 +59,15 @@ async function main() {
   // Masks
   const masks = computeMaskGrid(grid, cols, rows);
 
+  console.log('grid size', cols, rows);
+  let roadCells = 0;
+  for (const v of grid) if (v === 1) roadCells++;
+  console.log('road cells', roadCells);
+  
+  let maskCells = 0;
+  for (const m of masks) if (m !== 0) maskCells++;
+  console.log('mask cells', maskCells);
+  
   // Grid origin (SW) in WebMercator meters
   const sw = project(bounds.west, bounds.south);
 
