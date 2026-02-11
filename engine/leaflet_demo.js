@@ -46,7 +46,8 @@ async function main() {
 
   // Load roads
   const roads = await fetch('./eng_data/roads_guadalupe.geojson').then(r => r.json());
-
+  console.log('atlas loaded', atlasImg.width, atlasImg.height);
+  
   // Rasterize
   const { grid, cols, rows } = rasterizeRoadsToGrid({
     geojson: roads,
