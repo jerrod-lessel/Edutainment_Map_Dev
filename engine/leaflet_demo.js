@@ -1,4 +1,4 @@
-import { computeMaskGrid } from './autotile.js';
+nimport { computeMaskGrid } from './autotile.js';
 import { rasterizeRoadsToGrid } from './rasterize_roads.js';
 import { project } from './webmercator.js';
 import { SpriteOverlay } from './leaflet_sprite_overlay.js';
@@ -45,7 +45,7 @@ async function main() {
   }).addTo(map);
 
   // Load roads
-  const roads = await fetch('./data/roads_guadalupe.geojson').then(r => r.json());
+  const roads = await fetch('./eng_data/roads_guadalupe.geojson').then(r => r.json());
 
   // Rasterize
   const { grid, cols, rows } = rasterizeRoadsToGrid({
