@@ -1,4 +1,4 @@
-nimport { computeMaskGrid } from './autotile.js';
+import { computeMaskGrid } from './autotile.js';
 import { rasterizeRoadsToGrid } from './rasterize_roads.js';
 import { project } from './webmercator.js';
 import { SpriteOverlay } from './leaflet_sprite_overlay.js';
