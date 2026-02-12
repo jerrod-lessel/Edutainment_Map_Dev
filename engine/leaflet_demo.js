@@ -10,7 +10,7 @@ const bounds = {
   north: 35.010
 };
 
-const cellSizeMeters = 5;
+const cellSizeMeters = 7;
 
 const atlasMap = {
   1:  { tx: 2, ty: 0 },
