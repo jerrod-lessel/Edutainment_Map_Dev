@@ -52,7 +52,7 @@ async function main() {
     geojson: roads,
     bounds,
     cellSizeMeters,
-    brush: 1
+    brush: 0
   });
 
   // Masks
