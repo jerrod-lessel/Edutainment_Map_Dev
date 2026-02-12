@@ -10,7 +10,7 @@ const bounds = {
   north: 35.010
 };
 
-const cellSizeMeters = 10;
+const cellSizeMeters = 5;
 
 const atlasMap = {
   1:  { tx: 2, ty: 0 },
@@ -52,7 +52,7 @@ async function main() {
     geojson: roads,
     bounds,
     cellSizeMeters,
-    brush: 0.5
+    brush: 0
   });
 
   // Masks
