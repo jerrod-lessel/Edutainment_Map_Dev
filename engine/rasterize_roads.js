@@ -1,19 +1,63 @@
 // /engine/rasterize_roads.js
 import { project } from './webmercator.js';
 
-function bresenham(x0, y0, x1, y1, plot) {
-  let dx = Math.abs(x1 - x0);
-  let dy = Math.abs(y1 - y0);
-  let sx = x0 < x1 ? 1 : -1;
-  let sy = y0 < y1 ? 1 : -1;
-  let err = dx - dy;
+function supercoverLine(x0, y0, x1, y1, plot) {
+  // Based on a classic "supercover" grid traversal:
+  // ensures all cells touched by the segment are plotted.
+  let dx = x1 - x0;
+  let dy = y1 - y0;
 
-  while (true) {
-    plot(x0, y0);
-    if (x0 === x1 && y0 === y1) break;
-    const e2 = 2 * err;
-    if (e2 > -dy) { err -= dy; x0 += sx; }
-    if (e2 < dx) { err += dx; y0 += sy; }
+  const sx = dx >= 0 ? 1 : -1;
+  const sy = dy >= 0 ? 1 : -1;
+
+  dx = Math.abs(dx);
+  dy = Math.abs(dy);
+
+  let x = x0;
+  let y = y0;
+
+  plot(x, y);
+
+  if (dx === 0 && dy === 0) return;
+
+  // tMaxX/tMaxY track when we cross the next vertical/horizontal grid boundary
+  let tMaxX, tMaxY;
+  let tDeltaX, tDeltaY;
+
+  if (dx === 0) {
+    tDeltaX = Infinity;
+    tMaxX = Infinity;
+  } else {
+    tDeltaX = 1 / dx;
+    tMaxX = tDeltaX / 2;
+  }
+
+  if (dy === 0) {
+    tDeltaY = Infinity;
+    tMaxY = Infinity;
+  } else {
+    tDeltaY = 1 / dy;
+    tMaxY = tDeltaY / 2;
+  }
+
+  // Step count upper bound
+  const n = dx + dy;
+
+  for (let i = 0; i < n; i++) {
+    if (tMaxX < tMaxY) {
+      x += sx;
+      tMaxX += tDeltaX;
+    } else if (tMaxY < tMaxX) {
+      y += sy;
+      tMaxY += tDeltaY;
+    } else {
+      // Exactly on a corner: step both directions to avoid gaps
+      x += sx;
+      y += sy;
+      tMaxX += tDeltaX;
+      tMaxY += tDeltaY;
+    }
+    plot(x, y);
   }
 }
 
@@ -83,7 +127,8 @@ export function rasterizeRoadsToGrid({
       const a = toCell(lon0, lat0);
       const b = toCell(lon1, lat1);
 
-      bresenham(a.cx, a.cy, b.cx, b.cy, (x, y) => burn(x, y));
+      supercoverLine(a.cx, a.cy, b.cx, b.cy, (x, y) => burn(x, y));
+
     }
   }
 
