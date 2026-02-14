@@ -1,9 +1,11 @@
-// /engine/rasterize_roads.js
+// docs/engine/rasterize_roads.js
 import { project } from './webmercator.js';
 
+// ---------------------------
+// Supercover line traversal
+// Fills all grid cells touched by the segment
+// ---------------------------
 function supercoverLine(x0, y0, x1, y1, plot) {
-  // Based on a classic "supercover" grid traversal:
-  // ensures all cells touched by the segment are plotted.
   let dx = x1 - x0;
   let dy = y1 - y0;
 
@@ -17,10 +19,8 @@ function supercoverLine(x0, y0, x1, y1, plot) {
   let y = y0;
 
   plot(x, y);
-
   if (dx === 0 && dy === 0) return;
 
-  // tMaxX/tMaxY track when we cross the next vertical/horizontal grid boundary
   let tMaxX, tMaxY;
   let tDeltaX, tDeltaY;
 
@@ -40,9 +40,7 @@ function supercoverLine(x0, y0, x1, y1, plot) {
     tMaxY = tDeltaY / 2;
   }
 
-  // Step count upper bound
   const n = dx + dy;
-
   for (let i = 0; i < n; i++) {
     if (tMaxX < tMaxY) {
       x += sx;
@@ -51,7 +49,7 @@ function supercoverLine(x0, y0, x1, y1, plot) {
       y += sy;
       tMaxY += tDeltaY;
     } else {
-      // Exactly on a corner: step both directions to avoid gaps
+      // Corner-crossing: step both
       x += sx;
       y += sy;
       tMaxX += tDeltaX;
@@ -61,29 +59,84 @@ function supercoverLine(x0, y0, x1, y1, plot) {
   }
 }
 
+// ---------------------------
+// Extract LineStrings from GeoJSON
+// ---------------------------
 function extractRoadLines(geojson) {
-  // Overpass GeoJSON often exports ways as LineString with coordinates already.
-  // We'll handle FeatureCollection with LineString/MultiLineString.
-  const lines = [];
+  const out = [];
+  if (!geojson) return out;
 
   const walk = (g) => {
     if (!g) return;
-    if (g.type === 'FeatureCollection') g.features.forEach(walk);
-    else if (g.type === 'Feature') walk(g.geometry);
-    else if (g.type === 'LineString') lines.push(g.coordinates);
-    else if (g.type === 'MultiLineString') g.coordinates.forEach(l => lines.push(l));
-    else if (g.type === 'GeometryCollection') g.geometries.forEach(walk);
+    if (g.type === 'FeatureCollection') {
+      g.features.forEach(walk);
+    } else if (g.type === 'Feature') {
+      walk(g.geometry);
+    } else if (g.type === 'LineString') {
+      out.push(g.coordinates);
+    } else if (g.type === 'MultiLineString') {
+      g.coordinates.forEach(line => out.push(line));
+    } else if (g.type === 'GeometryCollection') {
+      g.geometries.forEach(walk);
+    }
   };
 
   walk(geojson);
-  return lines;
+  return out;
 }
 
+// ---------------------------
+// Fix A: bridge 1-cell gaps so 4-neighbor connectivity stays continuous
+// (keeps roads effectively 1-cell wide, but closes tiny holes)
+// ---------------------------
+function bridgeGaps(grid, cols, rows, passes = 1) {
+  const idx = (x, y) => y * cols + x;
+
+  for (let p = 0; p < passes; p++) {
+    const next = grid.slice(); // copy
+
+    for (let y = 1; y < rows - 1; y++) {
+      for (let x = 1; x < cols - 1; x++) {
+        const i = idx(x, y);
+        if (grid[i] === 1) continue;
+
+        const n = grid[idx(x, y - 1)] === 1;
+        const e = grid[idx(x + 1, y)] === 1;
+        const s = grid[idx(x, y + 1)] === 1;
+        const w = grid[idx(x - 1, y)] === 1;
+
+        // Straight bridges (most important)
+        if ((w && e) || (n && s)) {
+          next[i] = 1;
+          continue;
+        }
+
+        // Optional diagonal bridges (helps "touching at corners" breaks)
+        const ne = grid[idx(x + 1, y - 1)] === 1;
+        const nw = grid[idx(x - 1, y - 1)] === 1;
+        const se = grid[idx(x + 1, y + 1)] === 1;
+        const sw = grid[idx(x - 1, y + 1)] === 1;
+
+        if ((ne && sw) || (nw && se)) {
+          next[i] = 1;
+        }
+      }
+    }
+
+    grid = next;
+  }
+
+  return grid;
+}
+
+// ---------------------------
+// Main: Rasterize OSM roads (GeoJSON) into a grid
+// ---------------------------
 export function rasterizeRoadsToGrid({
   geojson,
   bounds,          // { west, south, east, north } in lon/lat
   cellSizeMeters,  // 10
-  brush = 1        // thickness in cells
+  brush = 0        // 0 = 1-cell wide, 1 = slightly thicker, etc.
 }) {
   // Project bounds to meters
   const sw = project(bounds.west, bounds.south);
@@ -97,9 +150,11 @@ export function rasterizeRoadsToGrid({
 
   const grid = new Uint8Array(cols * rows);
 
+  // Burn helper with thickness
   const burn = (cx, cy) => {
-    for (let dy = -brush; dy <= brush; dy++) {
-      for (let dx = -brush; dx <= brush; dx++) {
+    const b = Math.max(0, brush);
+    for (let dy = -b; dy <= b; dy++) {
+      for (let dx = -b; dx <= b; dx++) {
         const x = cx + dx;
         const y = cy + dy;
         if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
@@ -108,11 +163,11 @@ export function rasterizeRoadsToGrid({
     }
   };
 
+  // Convert lon/lat to grid cell coordinates
+  // Note: rows increase downward from the top edge (ne.y), matching our overlay drawing
   const toCell = (lon, lat) => {
     const p = project(lon, lat);
     const cx = Math.floor((p.x - sw.x) / cellSizeMeters);
-    // y increases downward in canvas; WebMercator y increases upward,
-    // so we flip by measuring from the top (ne.y).
     const cy = Math.floor((ne.y - p.y) / cellSizeMeters);
     return { cx, cy };
   };
@@ -128,9 +183,11 @@ export function rasterizeRoadsToGrid({
       const b = toCell(lon1, lat1);
 
       supercoverLine(a.cx, a.cy, b.cx, b.cy, (x, y) => burn(x, y));
-
     }
   }
 
-  return { grid, cols, rows };
+  // Fix A: close tiny gaps to improve 4-neighbor connectivity
+  const bridged = bridgeGaps(grid, cols, rows, 2);
+
+  return { grid: bridged, cols, rows };
 }
