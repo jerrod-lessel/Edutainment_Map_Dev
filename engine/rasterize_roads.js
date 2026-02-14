@@ -89,11 +89,20 @@ function extractRoadLines(geojson) {
 // Fix A: bridge 1-cell gaps so 4-neighbor connectivity stays continuous
 // (keeps roads effectively 1-cell wide, but closes tiny holes)
 // ---------------------------
-function bridgeGaps(grid, cols, rows, passes = 1) {
+function bridgeGapsConservative(grid, cols, rows, passes = 1) {
   const idx = (x, y) => y * cols + x;
 
+  const countNeighbors4 = (x, y, arr) => {
+    let c = 0;
+    if (arr[idx(x, y - 1)] === 1) c++;
+    if (arr[idx(x + 1, y)] === 1) c++;
+    if (arr[idx(x, y + 1)] === 1) c++;
+    if (arr[idx(x - 1, y)] === 1) c++;
+    return c;
+  };
+
   for (let p = 0; p < passes; p++) {
-    const next = grid.slice(); // copy
+    const next = grid.slice();
 
     for (let y = 1; y < rows - 1; y++) {
       for (let x = 1; x < cols - 1; x++) {
@@ -105,21 +114,21 @@ function bridgeGaps(grid, cols, rows, passes = 1) {
         const s = grid[idx(x, y + 1)] === 1;
         const w = grid[idx(x - 1, y)] === 1;
 
-        // Straight bridges (most important)
-        if ((w && e) || (n && s)) {
-          next[i] = 1;
-          continue;
-        }
+        // Only consider straight-line 1-cell gaps
+        const straightGap = (w && e && !n && !s) || (n && s && !e && !w);
+        if (!straightGap) continue;
 
-        // Optional diagonal bridges (helps "touching at corners" breaks)
-        const ne = grid[idx(x + 1, y - 1)] === 1;
-        const nw = grid[idx(x - 1, y - 1)] === 1;
-        const se = grid[idx(x + 1, y + 1)] === 1;
-        const sw = grid[idx(x - 1, y + 1)] === 1;
+        // Safety: don't fill near intersections/junction complexity.
+        // If either neighbor endpoint already has 3+ connections, skip.
+        const leftCount  = countNeighbors4(x - 1, y, grid);
+        const rightCount = countNeighbors4(x + 1, y, grid);
+        const upCount    = countNeighbors4(x, y - 1, grid);
+        const downCount  = countNeighbors4(x, y + 1, grid);
 
-        if ((ne && sw) || (nw && se)) {
-          next[i] = 1;
-        }
+        // If any adjacent road cell is already "junction-y", avoid thickening
+        if (leftCount >= 3 || rightCount >= 3 || upCount >= 3 || downCount >= 3) continue;
+
+        next[i] = 1;
       }
     }
 
@@ -187,7 +196,7 @@ export function rasterizeRoadsToGrid({
   }
 
   // Fix A: close tiny gaps to improve 4-neighbor connectivity
-  const bridged = bridgeGaps(grid, cols, rows, 2);
+const cleaned = bridgeGapsConservative(grid, cols, rows, 1);
+return { grid: cleaned, cols, rows };
 
-  return { grid: bridged, cols, rows };
 }
